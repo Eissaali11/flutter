@@ -14,12 +14,13 @@ import 'package:flutter_tools/src/build_info.dart';
 import 'package:flutter_tools/src/device.dart';
 import 'package:flutter_tools/src/test/flutter_tester_device.dart';
 import 'package:flutter_tools/src/test/font_config_manager.dart';
+import 'package:flutter_tools/src/vmservice.dart';
 import 'package:stream_channel/stream_channel.dart';
 import 'package:test/fake.dart';
 
-import '../src/common.dart';
 import '../src/context.dart';
 import '../src/fake_process_manager.dart';
+import '../src/fake_vm_services.dart';
 
 void main() {
   late FakePlatform platform;
@@ -48,6 +49,18 @@ void main() {
       dartEntrypointArgs: dartEntrypointArgs,
       uriConverter: (String input) => '$input/converted',
     );
+
+  testUsingContext('Missing dir error caught for FontConfigManger.dispose', () async {
+    final FontConfigManager fontConfigManager = FontConfigManager();
+
+    final Directory fontsDirectory = fileSystem.file(fontConfigManager.fontConfigFile).parent;
+    fontsDirectory.deleteSync(recursive: true);
+
+    await fontConfigManager.dispose();
+  }, overrides: <Type, Generator>{
+    FileSystem: () => fileSystem,
+    ProcessManager: () => processManager,
+  });
 
   group('The FLUTTER_TEST environment variable is passed to the test process', () {
     setUp(() {
@@ -249,6 +262,17 @@ class TestFlutterTesterDevice extends FlutterTesterTestDevice {
       uriConverter: uriConverter,
     );
     return dds;
+  }
+
+  @override
+  Future<FlutterVmService> connectToVmServiceImpl(
+    Uri httpUri, {
+    CompileExpression? compileExpression,
+    required Logger logger,
+  }) async {
+    return FakeVmServiceHost(requests: <VmServiceExpectation>[
+      const FakeVmServiceRequest(method: '_serveObservatory'),
+    ]).vmService;
   }
 
   @override

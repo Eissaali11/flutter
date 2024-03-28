@@ -32,5 +32,14 @@
   "tabSemanticsLabel": "Вкладка $tabIndex з $tabCount",
   "modalBarrierDismissLabel": "Закрити",
   "searchTextFieldPlaceholderLabel": "Шукайте",
+<<<<<<< HEAD
   "noSpellCheckReplacementsLabel": "No Replacements Found"
+=======
+  "noSpellCheckReplacementsLabel": "Замін не знайдено",
+  "menuDismissLabel": "Закрити меню",
+  "lookUpButtonLabel": "Шукати",
+  "searchWebButtonLabel": "Пошук в Інтернеті",
+  "shareButtonLabel": "Поділитися…",
+  "clearButtonLabel": "Clear"
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 }

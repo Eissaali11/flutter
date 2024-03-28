@@ -93,9 +93,8 @@ enum MaterialBannerClosedReason {
 class MaterialBanner extends StatefulWidget {
   /// Creates a [MaterialBanner].
   ///
-  /// The [actions], [content], and [forceActionsBelow] must be non-null.
-  /// The [actions].length must be greater than 0. The [elevation] must be null or
-  /// non-negative.
+  /// The length of the [actions] list must not be empty. The [elevation] must
+  /// be null or non-negative.
   const MaterialBanner({
     super.key,
     required this.content,
@@ -319,7 +318,7 @@ class _MaterialBannerState extends State<MaterialBanner> {
         ?? bannerTheme.leadingPadding
         ?? const EdgeInsetsDirectional.only(end: 16.0);
 
-    final Widget buttonBar = Container(
+    final Widget actionsBar = Container(
       alignment: AlignmentDirectional.centerEnd,
       constraints: const BoxConstraints(minHeight: 52.0),
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -373,12 +372,12 @@ class _MaterialBannerState extends State<MaterialBanner> {
                     ),
                   ),
                   if (isSingleRow)
-                    buttonBar,
+                    actionsBar,
                 ],
               ),
             ),
             if (!isSingleRow)
-              buttonBar,
+              actionsBar,
             if (elevation == 0)
               Divider(height: 0, color: dividerColor),
           ],
@@ -463,8 +462,6 @@ class _BannerDefaultsM2 extends MaterialBannerThemeData {
 // "END GENERATED" comments are generated from data in the Material
 // Design token database by the script:
 //   dev/tools/gen_defaults/bin/gen_defaults.dart.
-
-// Token database version: v0_162
 
 class _BannerDefaultsM3 extends MaterialBannerThemeData {
   _BannerDefaultsM3(this.context)

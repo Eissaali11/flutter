@@ -26,6 +26,7 @@ const Duration _bottomSheetExitDuration = Duration(milliseconds: 200);
 const Curve _modalBottomSheetCurve = decelerateEasing;
 const double _minFlingVelocity = 700.0;
 const double _closeProgressThreshold = 0.5;
+const double _defaultScrollControlDisabledMaxHeightRatio = 9.0 / 16.0;
 
 /// A callback for when the user begins dragging the bottom sheet.
 ///
@@ -122,6 +123,10 @@ class BottomSheet extends StatefulWidget {
   /// because the drag handle is always draggable.
   ///
   /// Default is true.
+  ///
+  /// If this is true, the [animationController] must not be null.
+  /// Use [BottomSheet.createAnimationController] to create one, or provide
+  /// another AnimationController.
   final bool enableDrag;
 
   /// Specifies whether a drag handle is shown.
@@ -133,6 +138,10 @@ class BottomSheet extends StatefulWidget {
   ///
   /// If null, then the value of  [BottomSheetThemeData.showDragHandle] is used. If
   /// that is also null, defaults to false.
+  ///
+  /// If this is true, the [animationController] must not be null.
+  /// Use [BottomSheet.createAnimationController] to create one, or provide
+  /// another AnimationController.
   final bool? showDragHandle;
 
   /// The bottom sheet drag handle's color.
@@ -210,14 +219,13 @@ class BottomSheet extends StatefulWidget {
 
   /// Defines minimum and maximum sizes for a [BottomSheet].
   ///
-  /// Typically a bottom sheet will cover the entire width of its
-  /// parent. Consider limiting the width by setting smaller constraints
-  /// for large screens.
-  ///
   /// If null, then the ambient [ThemeData.bottomSheetTheme]'s
   /// [BottomSheetThemeData.constraints] will be used. If that
-  /// is null then the bottom sheet's size will be constrained
-  /// by its parent (usually a [Scaffold]).
+  /// is null and [ThemeData.useMaterial3] is true, then the bottom sheet
+  /// will have a max width of 640dp. If [ThemeData.useMaterial3] is false, then
+  /// the bottom sheet's size will be constrained by its parent
+  /// (usually a [Scaffold]). In this case, consider limiting the width by
+  /// setting smaller constraints for large screens.
   ///
   /// If constraints are specified (either in this property or in the
   /// theme), the bottom sheet will be aligned to the bottom-center of
@@ -316,7 +324,7 @@ class _BottomSheetState extends State<BottomSheet> {
   }
 
   bool extentChanged(DraggableScrollableNotification notification) {
-    if (notification.extent == notification.minExtent) {
+    if (notification.extent == notification.minExtent && notification.shouldCloseOnMinExtent) {
       widget.onClosing();
     }
     return false;
@@ -325,7 +333,7 @@ class _BottomSheetState extends State<BottomSheet> {
   void _handleDragHandleHover(bool hovering) {
     if (hovering != dragHandleMaterialState.contains(MaterialState.hovered)) {
       setState(() {
-        if(hovering){
+        if (hovering){
           dragHandleMaterialState.add(MaterialState.hovered);
         }
         else{
@@ -358,15 +366,14 @@ class _BottomSheetState extends State<BottomSheet> {
         dragHandleColor: widget.dragHandleColor,
         dragHandleSize: widget.dragHandleSize,
       );
-      // Only add [GestureDetector] to the drag handle when the rest of the
+      // Only add [_BottomSheetGestureDetector] to the drag handle when the rest of the
       // bottom sheet is not draggable. If the whole bottom sheet is draggable,
       // no need to add it.
-      if(!widget.enableDrag) {
-        dragHandle = GestureDetector(
+      if (!widget.enableDrag) {
+        dragHandle = _BottomSheetGestureDetector(
           onVerticalDragStart: _handleDragStart,
           onVerticalDragUpdate: _handleDragUpdate,
           onVerticalDragEnd: _handleDragEnd,
-          excludeFromSemantics: true,
           child: dragHandle,
         );
       }
@@ -408,11 +415,10 @@ class _BottomSheetState extends State<BottomSheet> {
       );
     }
 
-    return !widget.enableDrag ? bottomSheet : GestureDetector(
+    return !widget.enableDrag ? bottomSheet : _BottomSheetGestureDetector(
       onVerticalDragStart: _handleDragStart,
       onVerticalDragUpdate: _handleDragUpdate,
       onVerticalDragEnd: _handleDragEnd,
-      excludeFromSemantics: true,
       child: bottomSheet,
     );
   }
@@ -422,7 +428,7 @@ class _BottomSheetState extends State<BottomSheet> {
 
 // See scaffold.dart
 
-typedef _SizeChangeCallback<Size> = void Function(Size);
+typedef _SizeChangeCallback<Size> = void Function(Size size);
 
 class _DragHandle extends StatelessWidget {
   const _DragHandle({
@@ -434,7 +440,7 @@ class _DragHandle extends StatelessWidget {
   });
 
   final VoidCallback? onSemanticsTap;
-  final Function(bool) handleHover;
+  final ValueChanged<bool> handleHover;
   final Set<MaterialState> materialState;
   final Color? dragHandleColor;
   final Size? dragHandleSize;
@@ -474,24 +480,26 @@ class _DragHandle extends StatelessWidget {
 }
 
 class _BottomSheetLayoutWithSizeListener extends SingleChildRenderObjectWidget {
-
   const _BottomSheetLayoutWithSizeListener({
+    required this.onChildSizeChanged,
     required this.animationValue,
     required this.isScrollControlled,
-    required this.onChildSizeChanged,
+    required this.scrollControlDisabledMaxHeightRatio,
     super.child,
   });
 
+  final _SizeChangeCallback<Size> onChildSizeChanged;
   final double animationValue;
   final bool isScrollControlled;
-  final _SizeChangeCallback<Size> onChildSizeChanged;
+  final double scrollControlDisabledMaxHeightRatio;
 
   @override
   _RenderBottomSheetLayoutWithSizeListener createRenderObject(BuildContext context) {
     return _RenderBottomSheetLayoutWithSizeListener(
+      onChildSizeChanged: onChildSizeChanged,
       animationValue: animationValue,
       isScrollControlled: isScrollControlled,
-      onChildSizeChanged: onChildSizeChanged,
+      scrollControlDisabledMaxHeightRatio: scrollControlDisabledMaxHeightRatio,
     );
   }
 
@@ -500,6 +508,7 @@ class _BottomSheetLayoutWithSizeListener extends SingleChildRenderObjectWidget {
     renderObject.onChildSizeChanged = onChildSizeChanged;
     renderObject.animationValue = animationValue;
     renderObject.isScrollControlled = isScrollControlled;
+    renderObject.scrollControlDisabledMaxHeightRatio = scrollControlDisabledMaxHeightRatio;
   }
 }
 
@@ -509,9 +518,11 @@ class _RenderBottomSheetLayoutWithSizeListener extends RenderShiftedBox {
     required _SizeChangeCallback<Size> onChildSizeChanged,
     required double animationValue,
     required bool isScrollControlled,
-  }) : _animationValue = animationValue,
+    required double scrollControlDisabledMaxHeightRatio,
+  }) : _onChildSizeChanged = onChildSizeChanged,
+       _animationValue = animationValue,
        _isScrollControlled = isScrollControlled,
-       _onChildSizeChanged = onChildSizeChanged,
+       _scrollControlDisabledMaxHeightRatio = scrollControlDisabledMaxHeightRatio,
        super(child);
 
   Size _lastSize = Size.zero;
@@ -546,6 +557,17 @@ class _RenderBottomSheetLayoutWithSizeListener extends RenderShiftedBox {
     }
 
     _isScrollControlled = newValue;
+    markNeedsLayout();
+  }
+
+  double get scrollControlDisabledMaxHeightRatio => _scrollControlDisabledMaxHeightRatio;
+  double _scrollControlDisabledMaxHeightRatio;
+  set scrollControlDisabledMaxHeightRatio(double newValue) {
+    if (_scrollControlDisabledMaxHeightRatio == newValue) {
+      return;
+    }
+
+    _scrollControlDisabledMaxHeightRatio = newValue;
     markNeedsLayout();
   }
 
@@ -594,13 +616,13 @@ class _RenderBottomSheetLayoutWithSizeListener extends RenderShiftedBox {
     return _getSize(constraints);
   }
 
-    BoxConstraints _getConstraintsForChild(BoxConstraints constraints) {
+  BoxConstraints _getConstraintsForChild(BoxConstraints constraints) {
     return BoxConstraints(
       minWidth: constraints.maxWidth,
       maxWidth: constraints.maxWidth,
       maxHeight: isScrollControlled
-        ? constraints.maxHeight
-        : constraints.maxHeight * 9.0 / 16.0,
+          ? constraints.maxHeight
+          : constraints.maxHeight * scrollControlDisabledMaxHeightRatio,
     );
   }
 
@@ -637,12 +659,14 @@ class _ModalBottomSheet<T> extends StatefulWidget {
     this.clipBehavior,
     this.constraints,
     this.isScrollControlled = false,
+    this.scrollControlDisabledMaxHeightRatio = _defaultScrollControlDisabledMaxHeightRatio,
     this.enableDrag = true,
     this.showDragHandle = false,
   });
 
   final ModalBottomSheetRoute<T> route;
   final bool isScrollControlled;
+  final double scrollControlDisabledMaxHeightRatio;
   final Color? backgroundColor;
   final double? elevation;
   final ShapeBorder? shape;
@@ -733,6 +757,7 @@ class _ModalBottomSheetState<T> extends State<_ModalBottomSheet<T>> {
               },
               animationValue: animationValue,
               isScrollControlled: widget.isScrollControlled,
+              scrollControlDisabledMaxHeightRatio: widget.scrollControlDisabledMaxHeightRatio,
               child: child,
             ),
           ),
@@ -767,8 +792,10 @@ class _ModalBottomSheetState<T> extends State<_ModalBottomSheet<T>> {
 /// dragged up and down and dismissed by swiping downwards.
 ///
 /// The [useSafeArea] parameter specifies whether the sheet will avoid system
-/// intrusions on the top, left, and right. If false, no SafeArea is added
-/// and the top padding is consumed using [MediaQuery.removePadding].
+/// intrusions on the top, left, and right. If false, no [SafeArea] is added;
+/// and [MediaQuery.removePadding] is applied to the top,
+/// so that system intrusions at the top will not be avoided by a [SafeArea]
+/// inside the bottom sheet either.
 /// Defaults to false.
 ///
 /// The optional [backgroundColor], [elevation], [shape], [clipBehavior],
@@ -818,6 +845,7 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
     this.enableDrag = true,
     this.showDragHandle,
     required this.isScrollControlled,
+    this.scrollControlDisabledMaxHeightRatio = _defaultScrollControlDisabledMaxHeightRatio,
     super.settings,
     this.transitionAnimationController,
     this.anchorPoint,
@@ -844,6 +872,13 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
   /// a scrollable child, such as a [ListView] or a [GridView],
   /// to have the bottom sheet be draggable.
   final bool isScrollControlled;
+
+  /// The max height constraint ratio for the bottom sheet
+  /// when [isScrollControlled] set to false,
+  /// no ratio will be applied when [isScrollControlled] set to true.
+  ///
+  /// Defaults to 9 / 16.
+  final double scrollControlDisabledMaxHeightRatio;
 
   /// The bottom sheet's background color.
   ///
@@ -882,14 +917,13 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
 
   /// Defines minimum and maximum sizes for a [BottomSheet].
   ///
-  /// Typically a bottom sheet will cover the entire width of its
-  /// parent. Consider limiting the width by setting smaller constraints
-  /// for large screens.
-  ///
   /// If null, the ambient [ThemeData.bottomSheetTheme]'s
   /// [BottomSheetThemeData.constraints] will be used. If that
-  /// is null, the bottom sheet's size will be constrained
-  /// by its parent (usually a [Scaffold]).
+  /// is null and [ThemeData.useMaterial3] is true, then the bottom sheet
+  /// will have a max width of 640dp. If [ThemeData.useMaterial3] is false, then
+  /// the bottom sheet's size will be constrained by its parent
+  /// (usually a [Scaffold]). In this case, consider limiting the width by
+  /// setting smaller constraints for large screens.
   ///
   /// If constraints are specified (either in this property or in the
   /// theme), the bottom sheet will be aligned to the bottom-center of
@@ -947,8 +981,14 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
   /// If true, a [SafeArea] is inserted to keep the bottom sheet away from
   /// system intrusions at the top, left, and right sides of the screen.
   ///
-  /// If false, the bottom sheet isn't exposed to the top padding of the
-  /// MediaQuery.
+  /// If false, the bottom sheet will extend through any system intrusions
+  /// at the top, left, and right.
+  ///
+  /// If false, then moreover [MediaQuery.removePadding] will be used
+  /// to remove top padding, so that a [SafeArea] widget inside the bottom
+  /// sheet will have no effect at the top edge. If this is undesired, consider
+  /// setting [useSafeArea] to true. Alternatively, wrap the [SafeArea] in a
+  /// [MediaQuery] that restates an ambient [MediaQueryData] from outside [builder].
   ///
   /// In either case, the bottom sheet extends all the way to the bottom of
   /// the screen, including any system intrusions.
@@ -972,6 +1012,12 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
   final String? barrierOnTapHint;
 
   final ValueNotifier<EdgeInsets> _clipDetailsNotifier = ValueNotifier<EdgeInsets>(EdgeInsets.zero);
+
+  @override
+  void dispose() {
+    _clipDetailsNotifier.dispose();
+    super.dispose();
+  }
 
   /// Updates the details regarding how the [SemanticsNode.rect] (focus) of
   /// the barrier for this [ModalBottomSheetRoute] should be clipped.
@@ -1025,11 +1071,12 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
           return _ModalBottomSheet<T>(
             route: this,
             backgroundColor: backgroundColor ?? sheetTheme.modalBackgroundColor ?? sheetTheme.backgroundColor ?? defaults.backgroundColor,
-            elevation: elevation ?? sheetTheme.modalElevation ?? defaults.modalElevation ?? sheetTheme.elevation,
+            elevation: elevation ?? sheetTheme.modalElevation ?? sheetTheme.elevation ?? defaults.modalElevation,
             shape: shape,
             clipBehavior: clipBehavior,
             constraints: constraints,
             isScrollControlled: isScrollControlled,
+            scrollControlDisabledMaxHeightRatio: scrollControlDisabledMaxHeightRatio,
             enableDrag: enableDrag,
             showDragHandle: showDragHandle ?? (enableDrag && (sheetTheme.showDragHandle ?? false)),
           );
@@ -1094,8 +1141,6 @@ class ModalBottomSheetRoute<T> extends PopupRoute<T> {
 /// curve specified with the [curve] argument, after the finger is released. In
 /// such a case, the value of [startingPoint] would be the progress of the
 /// animation at the time when the finger was released.
-///
-/// The [startingPoint] and [curve] arguments must not be null.
 class _BottomSheetSuspendedCurve extends ParametricCurve<double> {
   /// Creates a suspended curve.
   const _BottomSheetSuspendedCurve(
@@ -1154,6 +1199,9 @@ class _BottomSheetSuspendedCurve extends ParametricCurve<double> {
 /// Returns a `Future` that resolves to the value (if any) that was passed to
 /// [Navigator.pop] when the modal bottom sheet was closed.
 ///
+/// The 'barrierLabel' parameter can be used to set a custom barrierlabel.
+/// Will default to modalBarrierDismissLabel of context if not set.
+///
 /// {@tool dartpad}
 /// This example demonstrates how to use [showModalBottomSheet] to display a
 /// bottom sheet that obscures the content behind it when a user taps a button.
@@ -1186,12 +1234,14 @@ Future<T?> showModalBottomSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   Color? backgroundColor,
+  String? barrierLabel,
   double? elevation,
   ShapeBorder? shape,
   Clip? clipBehavior,
   BoxConstraints? constraints,
   Color? barrierColor,
   bool isScrollControlled = false,
+  double scrollControlDisabledMaxHeightRatio = _defaultScrollControlDisabledMaxHeightRatio,
   bool useRootNavigator = false,
   bool isDismissible = true,
   bool enableDrag = true,
@@ -1210,7 +1260,8 @@ Future<T?> showModalBottomSheet<T>({
     builder: builder,
     capturedThemes: InheritedTheme.capture(from: context, to: navigator.context),
     isScrollControlled: isScrollControlled,
-    barrierLabel: localizations.scrimLabel,
+    scrollControlDisabledMaxHeightRatio: scrollControlDisabledMaxHeightRatio,
+    barrierLabel: barrierLabel ?? localizations.scrimLabel,
     barrierOnTapHint: localizations.scrimOnTapHint(localizations.bottomSheetLabel),
     backgroundColor: backgroundColor,
     elevation: elevation,
@@ -1273,7 +1324,7 @@ Future<T?> showModalBottomSheet<T>({
 ///  * [Scaffold.of], for information about how to obtain the [BuildContext].
 ///  * The Material 2 spec at <https://m2.material.io/components/sheets-bottom>.
 ///  * The Material 3 spec at <https://m3.material.io/components/bottom-sheets/overview>.
-PersistentBottomSheetController<T> showBottomSheet<T>({
+PersistentBottomSheetController showBottomSheet({
   required BuildContext context,
   required WidgetBuilder builder,
   Color? backgroundColor,
@@ -1286,7 +1337,7 @@ PersistentBottomSheetController<T> showBottomSheet<T>({
 }) {
   assert(debugCheckHasScaffold(context));
 
-  return Scaffold.of(context).showBottomSheet<T>(
+  return Scaffold.of(context).showBottomSheet(
     builder,
     backgroundColor: backgroundColor,
     elevation: elevation,
@@ -1298,7 +1349,39 @@ PersistentBottomSheetController<T> showBottomSheet<T>({
   );
 }
 
+class _BottomSheetGestureDetector extends StatelessWidget {
+  const _BottomSheetGestureDetector({
+    required this.child,
+    required this.onVerticalDragStart,
+    required this.onVerticalDragUpdate,
+    required this.onVerticalDragEnd,
+  });
 
+  final Widget child;
+  final GestureDragStartCallback onVerticalDragStart;
+  final GestureDragUpdateCallback onVerticalDragUpdate;
+  final GestureDragEndCallback onVerticalDragEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawGestureDetector(
+      excludeFromSemantics: true,
+      gestures: <Type, GestureRecognizerFactory<GestureRecognizer>>{
+        VerticalDragGestureRecognizer : GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
+          () => VerticalDragGestureRecognizer(debugOwner: this),
+          (VerticalDragGestureRecognizer instance) {
+            instance
+              ..onStart = onVerticalDragStart
+              ..onUpdate = onVerticalDragUpdate
+              ..onEnd = onVerticalDragEnd
+              ..onlyAcceptDragOnThreshold = true;
+          },
+        ),
+      },
+      child: child,
+    );
+  }
+}
 
 // BEGIN GENERATED TOKEN PROPERTIES - BottomSheet
 
@@ -1306,8 +1389,6 @@ PersistentBottomSheetController<T> showBottomSheet<T>({
 // "END GENERATED" comments are generated from data in the Material
 // Design token database by the script:
 //   dev/tools/gen_defaults/bin/gen_defaults.dart.
-
-// Token database version: v0_162
 
 class _BottomSheetDefaultsM3 extends BottomSheetThemeData {
   _BottomSheetDefaultsM3(this.context)
@@ -1335,6 +1416,9 @@ class _BottomSheetDefaultsM3 extends BottomSheetThemeData {
 
   @override
   Size? get dragHandleSize => const Size(32, 4);
+
+  @override
+  BoxConstraints? get constraints => const BoxConstraints(maxWidth: 640.0);
 }
 
 // END GENERATED TOKEN PROPERTIES - BottomSheet

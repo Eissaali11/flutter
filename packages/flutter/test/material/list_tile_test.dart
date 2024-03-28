@@ -10,8 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../rendering/mock_canvas.dart';
 import '../widgets/semantics_tester.dart';
 import 'feedback_tester.dart';
 
@@ -156,22 +154,24 @@ void main() {
     await tester.pumpWidget(buildFrame(isTwoLine: true, textScaleFactor: 4.0));
     testChildren();
     testHorizontalGeometry();
-    // TODO(tahatesser): https://github.com/flutter/flutter/issues/99933
-    //                A bug in the HTML renderer and/or Chrome 96+ causes a
-    //                discrepancy in the paragraph height.
-    const bool hasIssue99933 = kIsWeb && !bool.fromEnvironment('FLUTTER_WEB_USE_SKIA');
-    testVerticalGeometry(hasIssue99933 ? 193 : 192.0);
+    if (!kIsWeb || isCanvasKit) { // https://github.com/flutter/flutter/issues/99933
+      testVerticalGeometry(192.0);
+    }
 
     // Make sure that the height of a large subtitle is taken into account.
     await tester.pumpWidget(buildFrame(isTwoLine: true, textScaleFactor: 0.5, subtitleScaleFactor: 4.0));
     testChildren();
     testHorizontalGeometry();
-    testVerticalGeometry(hasIssue99933 ? 109 : 108.0);
+    if (!kIsWeb || isCanvasKit) { // https://github.com/flutter/flutter/issues/99933
+      testVerticalGeometry(108.0);
+    }
 
     await tester.pumpWidget(buildFrame(isThreeLine: true, textScaleFactor: 4.0));
     testChildren();
     testHorizontalGeometry();
-    testVerticalGeometry(hasIssue99933 ? 193 : 192.0);
+    if (!kIsWeb || isCanvasKit) { // https://github.com/flutter/flutter/issues/99933
+      testVerticalGeometry(192.0);
+    }
   });
 
   testWidgets('ListTile geometry (RTL)', (WidgetTester tester) async {
@@ -504,13 +504,13 @@ void main() {
         ),
       ),
     );
-    // TODO(tahatesser): https://github.com/flutter/flutter/issues/99933
-    //                A bug in the HTML renderer and/or Chrome 96+ causes a
-    //                discrepancy in the paragraph height.
-    const bool hasIssue99933 = kIsWeb && !bool.fromEnvironment('FLUTTER_WEB_USE_SKIA');
-    const double height = hasIssue99933 ? 301.0 : 300;
-    const double avatarTop = hasIssue99933 ? 130.5 : 130.0;
-    const double placeholderTop = hasIssue99933 ? 138.5 : 138.0;
+
+    if (kIsWeb && !isCanvasKit) { // https://github.com/flutter/flutter/issues/99933
+      return;
+    }
+    const double height = 300;
+    const double avatarTop = 130.0;
+    const double placeholderTop = 138.0;
     //                                                                          LEFT                 TOP          WIDTH  HEIGHT
     expect(tester.getRect(find.byType(ListTile).at(0)),     const Rect.fromLTWH(                0.0,            0.0, 800.0, height));
     expect(tester.getRect(find.byType(CircleAvatar).at(0)), const Rect.fromLTWH(               16.0,      avatarTop,  40.0,  40.0));
@@ -904,6 +904,8 @@ void main() {
             rect: const Rect.fromLTRB(350.0, 250.0, 450.0, 350.0),
           ),
     );
+
+    focusNode.dispose();
   });
 
   testWidgets('ListTile can be hovered and has correct hover color', (WidgetTester tester) async {
@@ -991,6 +993,7 @@ void main() {
 
   testWidgets('ListTile can be splashed and has correct splash color', (WidgetTester tester) async {
     final Widget buildApp = MaterialApp(
+      theme: ThemeData(useMaterial3: false),
       home: Material(
         child: Center(
           child: SizedBox(
@@ -1233,6 +1236,8 @@ void main() {
     await tester.pump();
     expect(gotFocus, isFalse);
     expect(node.hasFocus, isFalse);
+
+    node.dispose();
   });
 
   testWidgets('ListTile respects tileColor & selectedTileColor', (WidgetTester tester) async {
@@ -1279,6 +1284,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: ThemeData(useMaterial3: false),
         home: Material(
           child: Center(
             child: ListTile(
@@ -1807,6 +1813,7 @@ void main() {
       bool selected = false,
     }) {
       return MaterialApp(
+        theme: ThemeData(useMaterial3: false),
         home: Material(
           child: Center(
             child: Builder(
@@ -1947,13 +1954,13 @@ void main() {
     // ListTile default text colors.
     await tester.pumpWidget(buildFrame());
     final RenderParagraph leading = _getTextRenderObject(tester, 'leading');
-    expect(leading.text.style!.color, theme.textTheme.labelSmall!.color);
+    expect(leading.text.style!.color, theme.colorScheme.onSurfaceVariant);
     final RenderParagraph title = _getTextRenderObject(tester, 'title');
-    expect(title.text.style!.color, theme.textTheme.bodyLarge!.color);
+    expect(title.text.style!.color, theme.colorScheme.onSurface);
     final RenderParagraph subtitle = _getTextRenderObject(tester, 'subtitle');
-    expect(subtitle.text.style!.color, theme.textTheme.bodyMedium!.color);
+    expect(subtitle.text.style!.color, theme.colorScheme.onSurfaceVariant);
     final RenderParagraph trailing = _getTextRenderObject(tester, 'trailing');
-    expect(trailing.text.style!.color, theme.textTheme.labelSmall!.color);
+    expect(trailing.text.style!.color, theme.colorScheme.onSurfaceVariant);
   });
 
   testWidgets('Default ListTile debugFillProperties', (WidgetTester tester) async {
@@ -2479,8 +2486,9 @@ void main() {
   });
 
   group('Material 2', () {
-    // Tests that are only relevant for Material 2. Once ThemeData.useMaterial3
-    // is turned on by default, these tests can be removed.
+    // These tests are only relevant for Material 2. Once Material 2
+    // support is deprecated and the APIs are removed, these tests
+    // can be deleted.
 
     testWidgets('ListTile geometry (LTR)', (WidgetTester tester) async {
       // See https://material.io/go/design-lists
@@ -3570,6 +3578,7 @@ void main() {
     });
 
     testWidgets('ListTile text color', (WidgetTester tester) async {
+      final ThemeData theme = ThemeData(useMaterial3: false);
       Widget buildFrame({
         bool dense = false,
         bool enabled = true,
@@ -3577,7 +3586,7 @@ void main() {
         ListTileStyle? style,
       }) {
         return MaterialApp(
-          theme: ThemeData(useMaterial3: false),
+          theme: theme,
           home: Material(
             child: Center(
               child: Builder(
@@ -3598,8 +3607,6 @@ void main() {
           ),
         );
       }
-
-      final ThemeData theme = ThemeData();
 
       // ListTile - ListTileStyle.list (default).
       await tester.pumpWidget(buildFrame());

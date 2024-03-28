@@ -5,6 +5,12 @@
 import 'context.dart';
 import 'platform.dart';
 
+/// Contains messages produced by Flutter tools.
+//
+// This allows partial reimplementations of the flutter tool to override
+// certain messages.
+// TODO(andrewkolos): It is unclear if this is worth keeping. See
+// https://github.com/flutter/flutter/issues/125155.
 UserMessages get userMessages => context.get<UserMessages>()!;
 
 /// Class containing message strings that can be produced by Flutter tools.
@@ -15,7 +21,7 @@ class UserMessages {
 
   // Messages used in FlutterValidator
   String flutterStatusInfo(String? channel, String? version, String os, String locale) =>
-      'Channel ${channel ?? 'unknown'}, ${version ?? 'Unknown'}, on $os, locale $locale';
+      'Channel ${channel ?? 'unknown'}, ${version ?? 'unknown version'}, on $os, locale $locale';
   String flutterVersion(String version, String channel, String flutterRoot) =>
       'Flutter version $version on channel $channel at $flutterRoot';
   String get flutterUnknownChannel =>
@@ -96,7 +102,7 @@ class UserMessages {
       'Unable to locate Android SDK.\n'
       'Install Android Studio from: https://developer.android.com/studio/index.html\n'
       'On first launch it will assist you in installing the Android SDK components.\n'
-      '(or visit ${_androidSdkInstallUrl(platform)} for detailed instructions).\n'
+      '(or visit ${androidSdkInstallUrl(platform)} for detailed instructions).\n'
       'If the Android SDK has been installed to a custom location, please use\n'
       '`flutter config --android-sdk` to update to that location.\n';
   String androidSdkLocation(String directory) => 'Android SDK at $directory';
@@ -104,7 +110,7 @@ class UserMessages {
       'Platform $platform, build-tools $tools';
   String androidSdkInstallHelp(Platform platform) =>
       'Try re-installing or updating your Android SDK,\n'
-      'visit ${_androidSdkInstallUrl(platform)} for detailed instructions.';
+      'visit ${androidSdkInstallUrl(platform)} for detailed instructions.';
   // Also occurs in AndroidLicenseValidator
   String androidStatusInfo(String version) => 'Android SDK version $version';
 
@@ -120,7 +126,7 @@ class UserMessages {
   String androidLicensesUnknown(Platform platform) =>
       'Android license status unknown.\n'
       'Run `flutter doctor --android-licenses` to accept the SDK licenses.\n'
-      'See ${_androidSdkInstallUrl(platform)} for more details.';
+      'See ${androidSdkInstallUrl(platform)} for more details.';
   String androidSdkManagerOutdated(String managerPath) =>
       'A newer version of the Android SDK is required. To update, run:\n'
       '$managerPath --update\n';
@@ -129,14 +135,14 @@ class UserMessages {
   String androidMissingSdkManager(String sdkManagerPath, Platform platform) =>
       'Android sdkmanager tool not found ($sdkManagerPath).\n'
       'Try re-installing or updating your Android SDK,\n'
-      'visit ${_androidSdkInstallUrl(platform)} for detailed instructions.';
+      'visit ${androidSdkInstallUrl(platform)} for detailed instructions.';
   String androidCannotRunSdkManager(String sdkManagerPath, String error, Platform platform) =>
       'Android sdkmanager tool was found, but failed to run ($sdkManagerPath): "$error".\n'
       'Try re-installing or updating your Android SDK,\n'
-      'visit ${_androidSdkInstallUrl(platform)} for detailed instructions.';
+      'visit ${androidSdkInstallUrl(platform)} for detailed instructions.';
   String androidSdkBuildToolsOutdated(int sdkMinVersion, String buildToolsMinVersion, Platform platform) =>
       'Flutter requires Android SDK $sdkMinVersion and the Android BuildTools $buildToolsMinVersion\n'
-      'To update the Android SDK visit ${_androidSdkInstallUrl(platform)} for detailed instructions.';
+      'To update the Android SDK visit ${androidSdkInstallUrl(platform)} for detailed instructions.';
   String get androidMissingCmdTools => 'cmdline-tools component is missing\n'
       'Run `path/to/sdkmanager --install "cmdline-tools;latest"`\n'
       'See https://developer.android.com/studio/command-line for more details.';
@@ -157,7 +163,7 @@ class UserMessages {
       'but Android Studio not found at this location.';
   String androidStudioInstallation(Platform platform) =>
       'Android Studio not found; download from https://developer.android.com/studio/index.html\n'
-      '(or visit ${_androidSdkInstallUrl(platform)} for detailed instructions).';
+      '(or visit ${androidSdkInstallUrl(platform)} for detailed instructions).';
 
   // Messages used in XcodeValidator
   String xcodeLocation(String location) => 'Xcode at $location';
@@ -177,10 +183,10 @@ class UserMessages {
       '  sudo xcodebuild -runFirstLaunch';
   String get xcodeMissing =>
       'Xcode not installed; this is necessary for iOS and macOS development.\n'
-      'Download at https://developer.apple.com/xcode/download/.';
+      'Download at https://developer.apple.com/xcode/.';
   String get xcodeIncomplete =>
       'Xcode installation is incomplete; a full installation is necessary for iOS and macOS development.\n'
-      'Download at: https://developer.apple.com/xcode/download/\n'
+      'Download at: https://developer.apple.com/xcode/\n'
       'Or install Xcode via the App Store.\n'
       'Once installed, run:\n'
       '  sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer\n'
@@ -222,7 +228,7 @@ class UserMessages {
   String get windows10SdkNotFound =>
       'Unable to locate a Windows 10 SDK. If building fails, install the Windows 10 SDK in Visual Studio.';
   String visualStudioMissing(String workload) =>
-      'Visual Studio not installed; this is necessary for Windows development.\n'
+      'Visual Studio not installed; this is necessary to develop Windows apps.\n'
       'Download at https://visualstudio.microsoft.com/downloads/.\n'
       'Please install the "$workload" workload, including all of its default components';
   String visualStudioTooOld(String minimumVersion, String workload) =>
@@ -233,7 +239,8 @@ class UserMessages {
       'supported by Flutter yet.';
   String get visualStudioNotLaunchable =>
       'The current Visual Studio installation is not launchable. Please reinstall Visual Studio.';
-  String get visualStudioIsIncomplete => 'The current Visual Studio installation is incomplete. Please reinstall Visual Studio.';
+  String get visualStudioIsIncomplete => 'The current Visual Studio installation is incomplete.\n'
+      'Please use Visual Studio Installer to complete the installation or reinstall Visual Studio.';
   String get visualStudioRebootRequired => 'Visual Studio requires a reboot of your system to complete installation.';
 
   // Messages used in LinuxDoctorValidator
@@ -263,24 +270,15 @@ class UserMessages {
   String get flutterNoDevelopmentDevice =>
       "Unable to locate a development device; please run 'flutter doctor' "
       'for information about installing additional components.';
-  String flutterNoMatchingDevice(String deviceId) => 'No supported devices found with name or id '
-      "matching '$deviceId'.";
-  String get flutterNoDevicesFound => 'No devices found.';
   String get flutterNoSupportedDevices => 'No supported devices connected.';
   String flutterMissPlatformProjects(List<String> unsupportedDevicesType) =>
       'If you would like your app to run on ${unsupportedDevicesType.join(' or ')}, consider running `flutter create .` to generate projects for these platforms.';
-  String get flutterFoundButUnsupportedDevices => 'The following devices were found, but are not supported by this project:';
-  String flutterFoundSpecifiedDevices(int count, String deviceId) =>
-      'Found $count devices with name or id matching $deviceId:';
-  String flutterChooseDevice(int option, String name, String deviceId) => '[$option]: $name ($deviceId)';
-  String get flutterChooseOne => 'Please choose one (or "q" to quit)';
   String get flutterSpecifyDeviceWithAllOption =>
       'More than one device connected; please specify a device with '
       "the '-d <deviceId>' flag, or use '-d all' to act on all devices.";
   String get flutterSpecifyDevice =>
       'More than one device connected; please specify a device with '
       "the '-d <deviceId>' flag.";
-  String get flutterNoConnectedDevices => 'No connected devices.';
   String get flutterNoPubspec =>
       'Error: No pubspec.yaml file found.\n'
       'This command should be run from the root of your Flutter project.';
@@ -311,6 +309,10 @@ class UserMessages {
       "you have compiled the engine in that directory, which should produce an 'out' directory";
   String get runnerLocalEngineOrWebSdkRequired =>
       'You must specify --local-engine or --local-web-sdk if you are using a locally built engine or web sdk.';
+  String get runnerLocalEngineRequiresHostEngine =>
+      'You are using a locally built engine (--local-engine) but have not specified --local-engine-host.\n'
+      'You may be building with a different engine than the one you are running with. '
+      'See https://github.com/flutter/flutter/issues/132245 for details.';
   String runnerNoEngineBuild(String engineBuildPath) =>
       'No Flutter engine build found at $engineBuildPath.';
   String runnerNoWebSdk(String webSdkPath) =>
@@ -349,7 +351,7 @@ class UserMessages {
       'Read more about iOS versioning at\n'
       'https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html\n';
 
-  String _androidSdkInstallUrl(Platform platform) {
+  String androidSdkInstallUrl(Platform platform) {
     const String baseUrl = 'https://flutter.dev/docs/get-started/install';
     const String fragment = '#android-setup';
     if (platform.isMacOS) {

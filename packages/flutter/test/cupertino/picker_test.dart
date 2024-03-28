@@ -9,7 +9,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+<<<<<<< HEAD
 import '../rendering/mock_canvas.dart';
+=======
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 import '../rendering/rendering_tester.dart';
 
 class SpyFixedExtentScrollController extends FixedExtentScrollController {
@@ -48,7 +51,7 @@ void main() {
     expect(paragraph.text.style!.color, isSameColorAs(CupertinoColors.black));
     expect(paragraph.text.style!.copyWith(color: CupertinoColors.black), const TextStyle(
       inherit: false,
-      fontFamily: '.SF Pro Display',
+      fontFamily: 'CupertinoSystemDisplay',
       fontSize: 21.0,
       fontWeight: FontWeight.w400,
       letterSpacing: -0.6,
@@ -83,7 +86,7 @@ void main() {
 
     testWidgets('selected item is in the middle', (WidgetTester tester) async {
       final FixedExtentScrollController controller = FixedExtentScrollController(initialItem: 1);
-
+      addTearDown(controller.dispose);
       await tester.pumpWidget(
         Directionality(
           textDirection: TextDirection.ltr,
@@ -320,6 +323,7 @@ void main() {
 
     testWidgets('a drag in between items settles back', (WidgetTester tester) async {
       final FixedExtentScrollController controller = FixedExtentScrollController(initialItem: 10);
+      addTearDown(controller.dispose);
       final List<int> selectedItems = <int>[];
 
       await tester.pumpWidget(
@@ -375,6 +379,7 @@ void main() {
     testWidgets('a big fling that overscrolls springs back', (WidgetTester tester) async {
       final FixedExtentScrollController controller =
           FixedExtentScrollController(initialItem: 10);
+      addTearDown(controller.dispose);
       final List<int> selectedItems = <int>[];
 
       await tester.pumpWidget(
@@ -500,6 +505,7 @@ void main() {
 
   testWidgets('Scroll controller is detached upon dispose', (WidgetTester tester) async {
     final SpyFixedExtentScrollController controller = SpyFixedExtentScrollController();
+    addTearDown(controller.dispose);
     expect(controller.hasListeners, false);
     expect(controller.positions.length, 0);
 
@@ -529,7 +535,12 @@ void main() {
     expect(controller.positions.length, 0);
   });
 
+<<<<<<< HEAD
   testWidgets('Registers taps and does not crash with certain diameterRatio', (WidgetTester tester) async {
+=======
+  testWidgets(
+      'Registers taps and does not crash with certain diameterRatio', (WidgetTester tester) async {
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
     // Regression test for https://github.com/flutter/flutter/issues/126491
 
     final List<int> children = List<int>.generate(100, (int index) => index);
@@ -572,7 +583,11 @@ void main() {
     ));
 
     // Children are painted two times for whatever reason
+<<<<<<< HEAD
     expect(paintedChildren, <int>[0, 0, 1, 1]);
+=======
+    expect(paintedChildren, <int>[0, 1, 0, 1]);
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 
     // Expect hitting 0 and 1, which are painted
     await tester.tap(find.byKey(const ValueKey<int>(0)));

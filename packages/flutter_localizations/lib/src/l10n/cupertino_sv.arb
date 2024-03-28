@@ -18,9 +18,18 @@
   "cutButtonLabel": "Klipp ut",
   "copyButtonLabel": "Kopiera",
   "pasteButtonLabel": "Klistra in",
-  "selectAllButtonLabel": "Markera alla",
+  "selectAllButtonLabel": "Markera allt",
   "tabSemanticsLabel": "Flik $tabIndex av $tabCount",
   "modalBarrierDismissLabel": "Stäng",
   "searchTextFieldPlaceholderLabel": "Sök",
+<<<<<<< HEAD
   "noSpellCheckReplacementsLabel": "No Replacements Found"
+=======
+  "noSpellCheckReplacementsLabel": "Inga ersättningar hittades",
+  "menuDismissLabel": "Stäng menyn",
+  "lookUpButtonLabel": "Titta upp",
+  "searchWebButtonLabel": "Sök på webben",
+  "shareButtonLabel": "Dela …",
+  "clearButtonLabel": "Clear"
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 }

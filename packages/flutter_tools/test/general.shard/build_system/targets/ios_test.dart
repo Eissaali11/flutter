@@ -13,16 +13,18 @@ import 'package:flutter_tools/src/build_system/build_system.dart';
 import 'package:flutter_tools/src/build_system/targets/ios.dart';
 import 'package:flutter_tools/src/convert.dart';
 import 'package:flutter_tools/src/reporting/reporting.dart';
+import 'package:unified_analytics/unified_analytics.dart';
 
 import '../../../src/common.dart';
 import '../../../src/context.dart';
 import '../../../src/fake_process_manager.dart';
+import '../../../src/fakes.dart';
 
 final Platform macPlatform = FakePlatform(operatingSystem: 'macos', environment: <String, String>{});
 
 const List<String> _kSharedConfig = <String>[
   '-dynamiclib',
-  '-miphoneos-version-min=11.0',
+  '-miphoneos-version-min=12.0',
   '-Xlinker',
   '-rpath',
   '-Xlinker',
@@ -45,6 +47,7 @@ void main() {
   late Artifacts artifacts;
   late BufferLogger logger;
   late TestUsage usage;
+  late FakeAnalytics fakeAnalytics;
 
   setUp(() {
     fileSystem = MemoryFileSystem.test();
@@ -52,6 +55,10 @@ void main() {
     logger = BufferLogger.test();
     artifacts = Artifacts.test();
     usage = TestUsage();
+    fakeAnalytics = getInitializedFakeAnalyticsInstance(
+      fs: fileSystem,
+      fakeFlutterVersion: FakeFlutterVersion(),
+    );
     environment = Environment.test(
       fileSystem.currentDirectory,
       defines: <String, String>{
@@ -64,6 +71,7 @@ void main() {
       fileSystem: fileSystem,
       engineVersion: '2',
       usage: usage,
+      analytics: fakeAnalytics,
     );
   });
 
@@ -87,7 +95,7 @@ void main() {
         fileSystem.path.absolute(fileSystem.path.join(
             '.tmp_rand0', 'flutter_tools_stub_source.rand0', 'debug_app.cc')),
         '-dynamiclib',
-        '-miphonesimulator-version-min=11.0',
+        '-miphonesimulator-version-min=12.0',
         '-Xlinker',
         '-rpath',
         '-Xlinker',
@@ -102,6 +110,13 @@ void main() {
         '-isysroot',
         'path/to/iPhoneSimulator.sdk',
         '-o',
+        appFrameworkPath,
+      ]),
+      FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
         appFrameworkPath,
       ]),
       FakeCommand(command: <String>[
@@ -139,6 +154,13 @@ void main() {
             '.tmp_rand0', 'flutter_tools_stub_source.rand0', 'debug_app.cc')),
         ..._kSharedConfig,
         '-o',
+        appFrameworkPath,
+      ]),
+      FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
         appFrameworkPath,
       ]),
       FakeCommand(command: <String>[
@@ -195,7 +217,14 @@ void main() {
 
     final Directory frameworkDirectory = environment.outputDir.childDirectory('App.framework');
     final File frameworkDirectoryBinary = frameworkDirectory.childFile('App');
-    processManager.addCommand(
+    processManager.addCommands(<FakeCommand>[
+      FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
+        frameworkDirectoryBinary.path,
+      ]),
       FakeCommand(command: <String>[
         'codesign',
         '--force',
@@ -204,7 +233,7 @@ void main() {
         '--timestamp=none',
         frameworkDirectoryBinary.path,
       ]),
-    );
+    ]);
 
     await const DebugIosApplicationBundle().build(environment);
     expect(processManager, hasNoRemainingExpectations);
@@ -268,6 +297,13 @@ void main() {
         '--include=/./shader_lib',
       ]),
       FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
+        frameworkDirectoryBinary.path,
+      ]),
+      FakeCommand(command: <String>[
         'codesign',
         '--force',
         '--sign',
@@ -323,7 +359,14 @@ void main() {
 
     final Directory frameworkDirectory = environment.outputDir.childDirectory('App.framework');
     final File frameworkDirectoryBinary = frameworkDirectory.childFile('App');
-    processManager.addCommand(
+    processManager.addCommands(<FakeCommand>[
+      FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
+        frameworkDirectoryBinary.path,
+      ]),
       FakeCommand(command: <String>[
         'codesign',
         '--force',
@@ -331,7 +374,7 @@ void main() {
         'ABC123',
         frameworkDirectoryBinary.path,
       ]),
-    );
+    ]);
 
     await const ReleaseIosApplicationBundle().build(environment);
     expect(processManager, hasNoRemainingExpectations);
@@ -351,6 +394,7 @@ void main() {
     expect(assetDirectory.childFile('vm_snapshot_data'), isNot(exists));
     expect(assetDirectory.childFile('isolate_snapshot_data'), isNot(exists));
     expect(usage.events, isEmpty);
+    expect(fakeAnalytics.sentEvents, isEmpty);
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => processManager,
@@ -371,7 +415,14 @@ void main() {
 
     final Directory frameworkDirectory = environment.outputDir.childDirectory('App.framework');
     final File frameworkDirectoryBinary = frameworkDirectory.childFile('App');
-    processManager.addCommand(
+    processManager.addCommands(<FakeCommand>[
+      FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
+        frameworkDirectoryBinary.path,
+      ]),
       FakeCommand(command: <String>[
         'codesign',
         '--force',
@@ -379,10 +430,15 @@ void main() {
         '-',
         frameworkDirectoryBinary.path,
       ]),
-    );
+    ]);
 
     await const ReleaseIosApplicationBundle().build(environment);
     expect(usage.events, contains(const TestUsageEvent('assemble', 'ios-archive', label: 'success')));
+    expect(fakeAnalytics.sentEvents, contains(Event.appleUsageEvent(
+      workflow: 'assemble',
+      parameter: 'ios-archive',
+      result: 'success',
+    )));
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => processManager,
@@ -397,6 +453,11 @@ void main() {
     await expectLater(() => const ReleaseIosApplicationBundle().build(environment),
         throwsA(const TypeMatcher<FileSystemException>()));
     expect(usage.events, contains(const TestUsageEvent('assemble', 'ios-archive', label: 'fail')));
+    expect(fakeAnalytics.sentEvents, contains(Event.appleUsageEvent(
+      workflow: 'assemble',
+      parameter: 'ios-archive',
+      result: 'fail',
+    )));
   }, overrides: <Type, Generator>{
     FileSystem: () => fileSystem,
     ProcessManager: () => processManager,
@@ -466,6 +527,7 @@ void main() {
     late FakeCommand copyPhysicalFrameworkCommand;
     late FakeCommand lipoCommandNonFatResult;
     late FakeCommand lipoVerifyArm64Command;
+    late FakeCommand xattrCommand;
     late FakeCommand adHocCodesignCommand;
 
     setUp(() {
@@ -493,6 +555,14 @@ void main() {
         binary.path,
         '-verify_arch',
         'arm64',
+      ]);
+
+      xattrCommand = FakeCommand(command: <String>[
+        'xattr',
+        '-r',
+        '-d',
+        'com.apple.FinderInfo',
+        binary.path,
       ]);
 
       adHocCodesignCommand = FakeCommand(command: <String>[
@@ -538,6 +608,7 @@ void main() {
           '-verify_arch',
           'x86_64',
         ]),
+        xattrCommand,
         adHocCodesignCommand,
       ]);
       await const DebugUnpackIOS().build(environment);
@@ -684,6 +755,7 @@ void main() {
         copyPhysicalFrameworkCommand,
         lipoCommandNonFatResult,
         lipoVerifyArm64Command,
+        xattrCommand,
         adHocCodesignCommand,
       ]);
       await const DebugUnpackIOS().build(environment);
@@ -733,60 +805,11 @@ void main() {
           'armv7',
           binary.path,
         ]),
+        xattrCommand,
         adHocCodesignCommand,
       ]);
 
       await const DebugUnpackIOS().build(environment);
-      expect(processManager, hasNoRemainingExpectations);
-    });
-
-    testWithoutContext('fails when bitcode strip fails', () async {
-      binary.createSync(recursive: true);
-
-      final Environment environment = Environment.test(
-        fileSystem.currentDirectory,
-        processManager: processManager,
-        artifacts: artifacts,
-        logger: logger,
-        fileSystem: fileSystem,
-        outputDir: outputDir,
-        defines: <String, String>{
-          kIosArchs: 'arm64',
-          kSdkRoot: 'path/to/iPhoneOS.sdk',
-        },
-      );
-
-      processManager.addCommands(<FakeCommand>[
-        FakeCommand(command: <String>[
-          'rsync',
-          '-av',
-          '--delete',
-          '--filter',
-          '- .DS_Store/',
-          'Artifact.flutterFramework.TargetPlatform.ios.release.EnvironmentType.physical',
-          outputDir.path,
-        ]),
-        lipoCommandNonFatResult,
-        lipoVerifyArm64Command,
-        FakeCommand(command: <String>[
-          'xcrun',
-          'bitcode_strip',
-          binary.path,
-          '-r',
-          '-o',
-          binary.path,
-        ], exitCode: 1, stderr: 'bitcode_strip error'),
-      ]);
-
-      await expectLater(
-        const ReleaseUnpackIOS().build(environment),
-        throwsA(isException.having(
-          (Exception exception) => exception.toString(),
-          'description',
-          contains('Failed to strip bitcode for output/Flutter.framework/Flutter.\nbitcode_strip error'),
-        )),
-      );
-
       expect(processManager, hasNoRemainingExpectations);
     });
 
@@ -810,6 +833,7 @@ void main() {
         copyPhysicalFrameworkCommand,
         lipoCommandNonFatResult,
         lipoVerifyArm64Command,
+        xattrCommand,
         adHocCodesignCommand,
       ]);
       await const DebugUnpackIOS().build(environment);
@@ -838,6 +862,7 @@ void main() {
         copyPhysicalFrameworkCommand,
         lipoCommandNonFatResult,
         lipoVerifyArm64Command,
+        xattrCommand,
         FakeCommand(command: <String>[
             'codesign',
             '--force',
@@ -885,6 +910,7 @@ void main() {
         copyPhysicalFrameworkCommand,
         lipoCommandNonFatResult,
         lipoVerifyArm64Command,
+        xattrCommand,
         FakeCommand(command: <String>[
           'codesign',
           '--force',

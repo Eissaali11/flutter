@@ -22,5 +22,14 @@
   "tabSemanticsLabel": "Pestana $tabIndex de $tabCount",
   "modalBarrierDismissLabel": "Ignorar",
   "searchTextFieldPlaceholderLabel": "Fai unha busca",
+<<<<<<< HEAD
   "noSpellCheckReplacementsLabel": "No Replacements Found"
+=======
+  "noSpellCheckReplacementsLabel": "Non se encontrou ningunha substitución",
+  "menuDismissLabel": "Pechar menú",
+  "lookUpButtonLabel": "Mirar cara arriba",
+  "searchWebButtonLabel": "Buscar na Web",
+  "shareButtonLabel": "Compartir…",
+  "clearButtonLabel": "Clear"
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 }

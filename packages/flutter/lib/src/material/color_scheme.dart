@@ -18,6 +18,10 @@ import 'theme_data.dart';
 /// that can be used to configure the color properties of most components.
 /// {@endtemplate}
 ///
+/// ### Colors in Material 3
+///
+/// {@macro flutter.material.colors.colorRoles}
+///
 /// The main accent color groups in the scheme are [primary], [secondary],
 /// and [tertiary].
 ///
@@ -33,7 +37,7 @@ import 'theme_data.dart';
 ///   for makers to use at their discretion and are intended to support
 ///   broader color expression in products.
 ///
-/// The remaining colors of the scheme are comprised of neutral colors used for
+/// The remaining colors of the scheme are composed of neutral colors used for
 /// backgrounds and surfaces, as well as specific colors for errors, dividers
 /// and shadows.
 ///
@@ -44,10 +48,10 @@ import 'theme_data.dart';
 /// contrast ratio with their matching colors of at least 4.5:1 in order to
 /// be readable.
 ///
-/// The [Theme] has a color scheme, [ThemeData.colorScheme], which can either be
-/// passed in as a parameter to the constructor or by using 'brightness' and
-/// 'colorSchemeSeed' parameters (which are used to generate a scheme with
-/// [ColorScheme.fromSeed]).
+/// ### Setting Colors in Flutter
+///
+///{@macro flutter.material.colors.settingColors}
+//
 @immutable
 class ColorScheme with Diagnosticable {
   /// Create a ColorScheme instance from the given colors.
@@ -112,16 +116,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant,
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant,
   }) : _primaryContainer = primaryContainer,
        _onPrimaryContainer = onPrimaryContainer,
        _secondaryContainer = secondaryContainer,
@@ -141,8 +135,6 @@ class ColorScheme with Diagnosticable {
        _inverseSurface = inverseSurface,
        _onInverseSurface = onInverseSurface,
        _inversePrimary = inversePrimary,
-       _primaryVariant = primaryVariant,
-       _secondaryVariant = secondaryVariant,
        _surfaceTint = surfaceTint;
 
   /// Generate a [ColorScheme] derived from the given `seedColor`.
@@ -243,8 +235,29 @@ class ColorScheme with Diagnosticable {
     );
   }
 
-  /// Create a ColorScheme based on a purple primary color that matches the
-  /// [baseline Material color scheme](https://material.io/design/color/the-color-system.html#color-theme-creation).
+  /// Create a light ColorScheme based on a purple primary color that matches the
+  /// [baseline Material 2 color scheme](https://material.io/design/color/the-color-system.html#color-theme-creation).
+  ///
+  /// This constructor shouldn't be used to update the Material 3 color scheme.
+  ///
+  /// For Material 3, use [ColorScheme.fromSeed] to create a color scheme
+  /// from a single seed color based on the Material 3 color system.
+  ///
+  /// {@tool snippet}
+  /// This example demonstrates how to create a color scheme similar to [ColorScheme.light]
+  /// using the [ColorScheme.fromSeed] constructor:
+  ///
+  /// ```dart
+  /// colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff6200ee)).copyWith(
+  ///   primaryContainer: const Color(0xff6200ee),
+  ///   onPrimaryContainer: Colors.white,
+  ///   secondaryContainer: const Color(0xff03dac6),
+  ///   onSecondaryContainer: Colors.black,
+  ///   error: const Color(0xffb00020),
+  ///   onError: Colors.white,
+  /// ),
+  /// ```
+  /// {@end-tool}
   const ColorScheme.light({
     this.brightness = Brightness.light,
     this.primary = const Color(0xff6200ee),
@@ -277,16 +290,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant = const Color(0xff3700b3),
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant = const Color(0xff018786),
   }) : _primaryContainer = primaryContainer,
        _onPrimaryContainer = onPrimaryContainer,
        _secondaryContainer = secondaryContainer,
@@ -306,12 +309,36 @@ class ColorScheme with Diagnosticable {
        _inverseSurface = inverseSurface,
        _onInverseSurface = onInverseSurface,
        _inversePrimary = inversePrimary,
-       _primaryVariant = primaryVariant,
-       _secondaryVariant = secondaryVariant,
        _surfaceTint = surfaceTint;
 
-  /// Create the recommended dark color scheme that matches the
-  /// [baseline Material color scheme](https://material.io/design/color/dark-theme.html#ui-application).
+  /// Create the dark color scheme that matches the
+  /// [baseline Material 2 color scheme](https://material.io/design/color/dark-theme.html#ui-application).
+  ///
+  /// This constructor shouldn't be used to update the Material 3 color scheme.
+  ///
+  /// For Material 3, use [ColorScheme.fromSeed] to create a color scheme
+  /// from a single seed color based on the Material 3 color system.
+  /// Override the `brightness` property of [ColorScheme.fromSeed] to create a
+  /// dark color scheme.
+  ///
+  /// {@tool snippet}
+  /// This example demonstrates how to create a color scheme similar to [ColorScheme.dark]
+  /// using the [ColorScheme.fromSeed] constructor:
+  ///
+  /// ```dart
+  /// colorScheme: ColorScheme.fromSeed(
+  ///   seedColor: const Color(0xffbb86fc),
+  ///   brightness: Brightness.dark,
+  /// ).copyWith(
+  ///   primaryContainer: const Color(0xffbb86fc),
+  ///   onPrimaryContainer: Colors.black,
+  ///   secondaryContainer: const Color(0xff03dac6),
+  ///   onSecondaryContainer: Colors.black,
+  ///   error: const Color(0xffcf6679),
+  ///   onError: Colors.black,
+  /// ),
+  /// ```
+  /// {@end-tool}
   const ColorScheme.dark({
     this.brightness = Brightness.dark,
     this.primary = const Color(0xffbb86fc),
@@ -344,16 +371,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant = const Color(0xff3700B3),
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant = const Color(0xff03dac6),
   }) : _primaryContainer = primaryContainer,
        _onPrimaryContainer = onPrimaryContainer,
        _secondaryContainer = secondaryContainer,
@@ -373,12 +390,31 @@ class ColorScheme with Diagnosticable {
        _inverseSurface = inverseSurface,
        _onInverseSurface = onInverseSurface,
        _inversePrimary = inversePrimary,
-       _primaryVariant = primaryVariant,
-       _secondaryVariant = secondaryVariant,
        _surfaceTint = surfaceTint;
 
   /// Create a high contrast ColorScheme based on a purple primary color that
-  /// matches the [baseline Material color scheme](https://material.io/design/color/the-color-system.html#color-theme-creation).
+  /// matches the [baseline Material 2 color scheme](https://material.io/design/color/the-color-system.html#color-theme-creation).
+  ///
+  /// This constructor shouldn't be used to update the Material 3 color scheme.
+  ///
+  /// For Material 3, use [ColorScheme.fromSeed] to create a color scheme
+  /// from a single seed color based on the Material 3 color system.
+  ///
+  /// {@tool snippet}
+  /// This example demonstrates how to create a color scheme similar to [ColorScheme.highContrastLight]
+  /// using the [ColorScheme.fromSeed] constructor:
+  ///
+  /// ```dart
+  /// colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff0000ba)).copyWith(
+  ///   primaryContainer: const Color(0xff0000ba),
+  ///   onPrimaryContainer: Colors.white,
+  ///   secondaryContainer: const Color(0xff66fff9),
+  ///   onSecondaryContainer: Colors.black,
+  ///   error: const Color(0xff790000),
+  ///   onError: Colors.white,
+  /// ),
+  /// ```
+  /// {@end-tool}
   const ColorScheme.highContrastLight({
     this.brightness = Brightness.light,
     this.primary = const Color(0xff0000ba),
@@ -411,16 +447,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant = const Color(0xff000088),
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant = const Color(0xff018786),
   }) : _primaryContainer = primaryContainer,
        _onPrimaryContainer = onPrimaryContainer,
        _secondaryContainer = secondaryContainer,
@@ -440,12 +466,36 @@ class ColorScheme with Diagnosticable {
        _inverseSurface = inverseSurface,
        _onInverseSurface = onInverseSurface,
        _inversePrimary = inversePrimary,
-       _primaryVariant = primaryVariant,
-       _secondaryVariant = secondaryVariant,
        _surfaceTint = surfaceTint;
 
   /// Create a high contrast ColorScheme based on the dark
-  /// [baseline Material color scheme](https://material.io/design/color/dark-theme.html#ui-application).
+  /// [baseline Material 2 color scheme](https://material.io/design/color/dark-theme.html#ui-application).
+  ///
+  /// This constructor shouldn't be used to update the Material 3 color scheme.
+  ///
+  /// For Material 3, use [ColorScheme.fromSeed] to create a color scheme
+  /// from a single seed color based on the Material 3 color system.
+  /// Override the `brightness` property of [ColorScheme.fromSeed] to create a
+  /// dark color scheme.
+  ///
+  /// {@tool snippet}
+  /// This example demonstrates how to create a color scheme similar to [ColorScheme.highContrastDark]
+  /// using the [ColorScheme.fromSeed] constructor:
+  ///
+  /// ```dart
+  /// colorScheme: ColorScheme.fromSeed(
+  ///   seedColor: const Color(0xffefb7ff),
+  ///   brightness: Brightness.dark,
+  /// ).copyWith(
+  ///   primaryContainer: const Color(0xffefb7ff),
+  ///   onPrimaryContainer: Colors.black,
+  ///   secondaryContainer: const Color(0xff66fff9),
+  ///   onSecondaryContainer: Colors.black,
+  ///   error: const Color(0xff9b374d),
+  ///   onError: Colors.white,
+  /// ),
+  /// ```
+  /// {@end-tool}
   const ColorScheme.highContrastDark({
     this.brightness = Brightness.dark,
     this.primary = const Color(0xffefb7ff),
@@ -478,16 +528,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant = const Color(0xffbe9eff),
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant = const Color(0xff66fff9),
   }) : _primaryContainer = primaryContainer,
        _onPrimaryContainer = onPrimaryContainer,
        _secondaryContainer = secondaryContainer,
@@ -507,24 +547,26 @@ class ColorScheme with Diagnosticable {
        _inverseSurface = inverseSurface,
        _onInverseSurface = onInverseSurface,
        _inversePrimary = inversePrimary,
-       _primaryVariant = primaryVariant,
-       _secondaryVariant = secondaryVariant,
        _surfaceTint = surfaceTint;
 
-  /// Create a color scheme from a [MaterialColor] swatch.
+  /// Creates a color scheme from a [MaterialColor] swatch.
   ///
-  /// This constructor is used by [ThemeData] to create its default
-  /// color scheme.
+  /// In Material 3, this constructor is ignored by [ThemeData] when creating
+  /// its default color scheme. Instead, [ThemeData] uses [ColorScheme.fromSeed]
+  /// to create its default color scheme. This constructor shouldn't be used
+  /// to update the Material 3 color scheme. It will be phased out gradually;
+  /// see https://github.com/flutter/flutter/issues/120064 for more details.
+  ///
+  /// If [ThemeData.useMaterial3] is false, then this constructor is used by
+  /// [ThemeData] to create its default color scheme.
   factory ColorScheme.fromSwatch({
     MaterialColor primarySwatch = Colors.blue,
-    Color? primaryColorDark,
     Color? accentColor,
     Color? cardColor,
     Color? backgroundColor,
     Color? errorColor,
     Brightness brightness = Brightness.light,
   }) {
-
     final bool isDark = brightness == Brightness.dark;
     final bool primaryIsDark = _brightnessFor(primarySwatch) == Brightness.dark;
     final Color secondary = accentColor ?? (isDark ? Colors.tealAccent[200]! : primarySwatch);
@@ -532,9 +574,7 @@ class ColorScheme with Diagnosticable {
 
     return ColorScheme(
       primary: primarySwatch,
-      primaryVariant: primaryColorDark ?? (isDark ? Colors.black : primarySwatch[700]!),
       secondary: secondary,
-      secondaryVariant: isDark ? Colors.tealAccent[700]! : primarySwatch[700]!,
       surface: cardColor ?? (isDark ? Colors.grey[800]! : Colors.white),
       background: backgroundColor ?? (isDark ? Colors.grey[700]! : primarySwatch[200]!),
       error: errorColor ?? Colors.red[700]!,
@@ -726,22 +766,6 @@ class ColorScheme with Diagnosticable {
   /// elevation.
   Color get surfaceTint => _surfaceTint ?? primary;
 
-  final Color? _primaryVariant;
-  /// A darker version of the primary color.
-  @Deprecated(
-    'Use primary or primaryContainer instead. '
-    'This feature was deprecated after v2.6.0-0.0.pre.'
-  )
-  Color get primaryVariant => _primaryVariant ?? primary;
-
-  final Color? _secondaryVariant;
-  /// A darker version of the secondary color.
-  @Deprecated(
-    'Use secondary or secondaryContainer instead. '
-    'This feature was deprecated after v2.6.0-0.0.pre.'
-  )
-  Color get secondaryVariant => _secondaryVariant ?? secondary;
-
   /// Creates a copy of this color scheme with the given fields
   /// replaced by the non-null parameter values.
   ColorScheme copyWith({
@@ -776,16 +800,6 @@ class ColorScheme with Diagnosticable {
     Color? onInverseSurface,
     Color? inversePrimary,
     Color? surfaceTint,
-    @Deprecated(
-      'Use primary or primaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? primaryVariant,
-    @Deprecated(
-      'Use secondary or secondaryContainer instead. '
-      'This feature was deprecated after v2.6.0-0.0.pre.'
-    )
-    Color? secondaryVariant,
   }) {
     return ColorScheme(
       brightness: brightness ?? this.brightness,
@@ -818,8 +832,6 @@ class ColorScheme with Diagnosticable {
       inverseSurface : inverseSurface ?? this.inverseSurface,
       onInverseSurface : onInverseSurface ?? this.onInverseSurface,
       inversePrimary : inversePrimary ?? this.inversePrimary,
-      primaryVariant: primaryVariant ?? this.primaryVariant,
-      secondaryVariant: secondaryVariant ?? this.secondaryVariant,
       surfaceTint: surfaceTint ?? this.surfaceTint,
     );
   }
@@ -862,8 +874,6 @@ class ColorScheme with Diagnosticable {
       inverseSurface: Color.lerp(a.inverseSurface, b.inverseSurface, t),
       onInverseSurface: Color.lerp(a.onInverseSurface, b.onInverseSurface, t),
       inversePrimary: Color.lerp(a.inversePrimary, b.inversePrimary, t),
-      primaryVariant: Color.lerp(a.primaryVariant, b.primaryVariant, t),
-      secondaryVariant: Color.lerp(a.secondaryVariant, b.secondaryVariant, t),
       surfaceTint: Color.lerp(a.surfaceTint, b.surfaceTint, t),
     );
   }
@@ -907,8 +917,6 @@ class ColorScheme with Diagnosticable {
       && other.inverseSurface == inverseSurface
       && other.onInverseSurface == onInverseSurface
       && other.inversePrimary == inversePrimary
-      && other.primaryVariant == primaryVariant
-      && other.secondaryVariant == secondaryVariant
       && other.surfaceTint == surfaceTint;
   }
 
@@ -945,8 +953,6 @@ class ColorScheme with Diagnosticable {
       inverseSurface,
       onInverseSurface,
       inversePrimary,
-      primaryVariant,
-      secondaryVariant,
       surfaceTint,
     ),
   );
@@ -985,37 +991,43 @@ class ColorScheme with Diagnosticable {
     properties.add(ColorProperty('inverseSurface', inverseSurface, defaultValue: defaultScheme.inverseSurface));
     properties.add(ColorProperty('onInverseSurface', onInverseSurface, defaultValue: defaultScheme.onInverseSurface));
     properties.add(ColorProperty('inversePrimary', inversePrimary, defaultValue: defaultScheme.inversePrimary));
-    properties.add(ColorProperty('primaryVariant', primaryVariant, defaultValue: defaultScheme.primaryVariant));
-    properties.add(ColorProperty('secondaryVariant', secondaryVariant, defaultValue: defaultScheme.secondaryVariant));
     properties.add(ColorProperty('surfaceTint', surfaceTint, defaultValue: defaultScheme.surfaceTint));
   }
 
   /// Generate a [ColorScheme] derived from the given `imageProvider`.
   ///
   /// Material Color Utilities extracts the dominant color from the
-  /// supplied [ImageProvider]. Using this color, a set of tonal palettes are
-  /// constructed. These tonal palettes are based on the Material 3 Color
-  /// system and provide all the needed colors for a [ColorScheme]. These
-  /// colors are designed to work well together and meet contrast
-  /// requirements for accessibility.
+  /// supplied [ImageProvider]. Using this color, a [ColorScheme] is generated
+  /// with harmonious colors that meet contrast requirements for accessibility.
   ///
   /// If any of the optional color parameters are non-null, they will be
   /// used in place of the generated colors for that field in the resulting
-  /// color scheme. This allows apps to override specific colors for their
+  /// [ColorScheme]. This allows apps to override specific colors for their
   /// needs.
   ///
   /// Given the nature of the algorithm, the most dominant color of the
-  /// `imageProvider` may not wind up as one of the ColorScheme colors.
+  /// `imageProvider` may not wind up as one of the [ColorScheme] colors.
   ///
   /// The provided image will be scaled down to a maximum size of 112x112 pixels
   /// during color extraction.
   ///
+  /// {@tool dartpad}
+  /// This sample shows how to use [ColorScheme.fromImageProvider] to create
+  /// content-based dynamic color schemes.
+  ///
+  /// ** See code in examples/api/lib/material/color_scheme/dynamic_content_color.0.dart **
+  /// {@end-tool}
+  ///
   /// See also:
   ///
+  ///  * [M3 Guidelines: Dynamic color from content](https://m3.material.io/styles/color/dynamic-color/user-generated-color#8af550b9-a19e-4e9f-bb0a-7f611fed5d0f)
+  ///  * <https://pub.dev/packages/dynamic_color>, a package to create
+  ///    [ColorScheme]s based on a platform's implementation of dynamic color.
   ///  * <https://m3.material.io/styles/color/the-color-system/color-roles>, the
   ///    Material 3 Color system specification.
   ///  * <https://pub.dev/packages/material_color_utilities>, the package
-  ///    used to generate the base color and tonal palettes needed for the scheme.
+  ///    used to algorithmically determine the dominant color and to generate
+  ///    the [ColorScheme].
   static Future<ColorScheme> fromImageProvider({
     required ImageProvider provider,
     Brightness brightness = Brightness.light,

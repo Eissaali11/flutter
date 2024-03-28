@@ -20,6 +20,7 @@ void main() {
 
   testWidgets('Should show event indicator for pointer events', (WidgetTester tester) async {
     final AnimationSheetBuilder animationSheet = AnimationSheetBuilder(frameSize: const Size(200, 200), allLayers: true);
+    addTearDown(animationSheet.dispose);
     final List<Offset> taps = <Offset>[];
     Widget target({bool recording = true}) => Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 25, 20),
@@ -78,6 +79,7 @@ void main() {
 
   testWidgets('Should show event indicator for pointer events with setSurfaceSize', (WidgetTester tester) async {
     final AnimationSheetBuilder animationSheet = AnimationSheetBuilder(frameSize: const Size(200, 200), allLayers: true);
+    addTearDown(animationSheet.dispose);
     final List<Offset> taps = <Offset>[];
     Widget target({bool recording = true}) => Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 25, 20),
@@ -132,5 +134,7 @@ void main() {
       animationSheet.collate(6),
       matchesGoldenFile('LiveBinding.press.animation.2.png'),
     );
-  }, skip: isBrowser); // https://github.com/flutter/flutter/issues/56001
+  },
+    skip: isBrowser, // [intended] https://github.com/flutter/flutter/issues/56001
+  );
 }

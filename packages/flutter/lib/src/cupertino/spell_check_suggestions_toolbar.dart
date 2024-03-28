@@ -82,7 +82,11 @@ class CupertinoSpellCheckSuggestionsToolbar extends StatelessWidget {
           CupertinoLocalizations.of(editableTextState.context);
       return <ContextMenuButtonItem>[
         ContextMenuButtonItem(
+<<<<<<< HEAD
           onPressed: () {},
+=======
+          onPressed: null,
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
           label: localizations.noSpellCheckReplacementsLabel,
         )
       ];
@@ -130,7 +134,7 @@ class CupertinoSpellCheckSuggestionsToolbar extends StatelessWidget {
       if (editableTextState.mounted) {
         editableTextState.bringIntoView(editableTextState.textEditingValue.selection.extent);
       }
-    });
+    }, debugLabel: 'SpellCheckSuggestions.bringIntoView');
     editableTextState.hideToolbar();
   }
 

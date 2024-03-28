@@ -34,6 +34,7 @@ Future<Depfile> copyAssets(
   BuildMode? buildMode,
   required ShaderTarget shaderTarget,
   List<File> additionalInputs = const <File>[],
+  String? flavor,
 }) async {
   // Check for an SkSL bundle.
   final String? shaderBundlePath = environment.defines[kBundleSkSLPath] ?? environment.inputs[kBundleSkSLPath];
@@ -58,6 +59,7 @@ Future<Depfile> copyAssets(
     packagesPath: environment.projectDir.childFile('.packages').path,
     deferredComponentsEnabled: environment.defines[kDeferredComponents] == 'true',
     targetPlatform: targetPlatform,
+    flavor: flavor,
   );
   if (resultCode != 0) {
     throw Exception('Failed to bundle asset files.');
@@ -78,6 +80,7 @@ Future<Depfile> copyAssets(
     logger: environment.logger,
     fileSystem: environment.fileSystem,
     artifacts: environment.artifacts,
+    targetPlatform: targetPlatform,
   );
   final ShaderCompiler shaderCompiler = ShaderCompiler(
     processManager: environment.processManager,
@@ -178,7 +181,7 @@ Future<Depfile> copyAssets(
               // If deferred components are disabled, then copy assets to regular location.
               final File file = environment.defines[kDeferredComponents] == 'true'
                 ? environment.fileSystem.file(
-                    environment.fileSystem.path.join(componentOutputDir.path, buildMode.name, 'deferred_assets', 'flutter_assets', entry.key))
+                    environment.fileSystem.path.join(componentOutputDir.path, buildMode.cliName, 'deferred_assets', 'flutter_assets', entry.key))
                 : environment.fileSystem.file(
                     environment.fileSystem.path.join(outputDirectory.path, entry.key));
               outputs.add(file);
@@ -322,12 +325,9 @@ class CopyAssets extends Target {
       output,
       targetPlatform: TargetPlatform.android,
       shaderTarget: ShaderTarget.sksl,
+      flavor: environment.defines[kFlavor],
     );
-    final DepfileService depfileService = DepfileService(
-      fileSystem: environment.fileSystem,
-      logger: environment.logger,
-    );
-    depfileService.writeToFile(
+    environment.depFileService.writeToFile(
       depfile,
       environment.buildDir.childFile('flutter_assets.d'),
     );

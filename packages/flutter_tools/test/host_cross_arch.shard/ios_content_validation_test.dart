@@ -7,11 +7,9 @@ import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/base/io.dart';
 import 'package:flutter_tools/src/base/utils.dart';
 import 'package:flutter_tools/src/build_info.dart';
-import 'package:flutter_tools/src/convert.dart';
 
 import '../integration.shard/test_utils.dart';
 import '../src/common.dart';
-import '../src/fake_process_manager.dart';
 
 void main() {
   group('iOS app validation', () {
@@ -44,18 +42,22 @@ void main() {
       );
 
       // Pre-cache iOS engine Flutter.xcframework artifacts.
-      processManager.runSync(<String>[
-        flutterBin,
-        ...getLocalEngineArguments(),
-        'precache',
-        '--ios',
-      ], workingDirectory: tempDir.path);
+      ProcessResult result = processManager.runSync(
+        <String>[
+          flutterBin,
+          ...getLocalEngineArguments(),
+          'precache',
+          '--ios',
+        ],
+        workingDirectory: tempDir.path,
+      );
+      expect(result, const ProcessResultMatcher());
 
       // Pretend the SDK was on an external drive with stray "._" files in the xcframework
       hiddenFile = xcframeworkArtifact.childFile('._Info.plist')..createSync();
 
       // Test a plugin example app to allow plugins validation.
-      processManager.runSync(<String>[
+      result = processManager.runSync(<String>[
         flutterBin,
         ...getLocalEngineArguments(),
         'create',
@@ -65,6 +67,7 @@ void main() {
         'plugin',
         'hello',
       ], workingDirectory: tempDir.path);
+      expect(result, const ProcessResultMatcher());
 
       pluginRoot = tempDir.childDirectory('hello');
       projectRoot = pluginRoot.childDirectory('example').path;
@@ -76,7 +79,7 @@ void main() {
     });
 
     for (final BuildMode buildMode in <BuildMode>[BuildMode.debug, BuildMode.release]) {
-      group('build in ${buildMode.name} mode', () {
+      group('build in ${buildMode.cliName} mode', () {
         late Directory outputPath;
         late Directory outputApp;
         late Directory frameworkDirectory;
@@ -98,7 +101,7 @@ void main() {
             'ios',
             '--verbose',
             '--no-codesign',
-            '--${buildMode.name}',
+            '--${buildMode.cliName}',
             '--obfuscate',
             '--split-debug-info=foo debug info/',
           ], workingDirectory: projectRoot);
@@ -125,7 +128,7 @@ void main() {
             projectRoot,
             'build',
             'ios',
-            '${sentenceCase(buildMode.name)}-iphoneos',
+            '${sentenceCase(buildMode.cliName)}-iphoneos',
           ));
 
           buildAppFrameworkDsym = buildPath.childDirectory('App.framework.dSYM');
@@ -152,9 +155,6 @@ void main() {
           ));
 
           expect(vmSnapshot.existsSync(), buildMode == BuildMode.debug);
-
-          // Builds should not contain deprecated bitcode.
-          expect(_containsBitcode(outputFlutterFrameworkBinary.path, processManager), isFalse);
         });
 
         testWithoutContext('Info.plist dart VM Service Bonjour service', () {
@@ -249,6 +249,7 @@ void main() {
               'VERBOSE_SCRIPT_LOGGING': '1',
               'FLUTTER_BUILD_MODE': 'release',
               'ACTION': 'install',
+              'FLUTTER_BUILD_DIR': 'build',
               // Skip bitcode stripping since we just checked that above.
             },
           );
@@ -356,47 +357,4 @@ void main() {
   }, skip: !platform.isMacOS, // [intended] only makes sense for macos platform.
      timeout: const Timeout(Duration(minutes: 7))
   );
-}
-
-bool _containsBitcode(String pathToBinary, ProcessManager processManager) {
-  // See: https://stackoverflow.com/questions/32755775/how-to-check-a-static-library-is-built-contain-bitcode
-  final ProcessResult result = processManager.runSync(<String>[
-    'otool',
-    '-l',
-    '-arch',
-    'arm64',
-    pathToBinary,
-  ]);
-  final String loadCommands = result.stdout as String;
-  if (!loadCommands.contains('__LLVM')) {
-    return false;
-  }
-  // Presence of the section may mean a bitcode marker was embedded (size=1), but there is no content.
-  if (!loadCommands.contains('size 0x0000000000000001')) {
-    return true;
-  }
-  // Check the false positives: size=1 wasn't referencing the __LLVM section.
-
-  bool emptyBitcodeMarkerFound = false;
-  //  Section
-  //  sectname __bundle
-  //  segname __LLVM
-  //  addr 0x003c4000
-  //  size 0x0042b633
-  //  offset 3932160
-  //  ...
-  final List<String> lines = LineSplitter.split(loadCommands).toList();
-  lines.asMap().forEach((int index, String line) {
-    if (line.contains('segname __LLVM') && lines.length - index - 1 > 3) {
-      final bool bitcodeMarkerFound = lines
-          .skip(index - 1)
-          .take(4)
-          .any((String line) => line.contains(' size 0x0000000000000001'));
-      if (bitcodeMarkerFound) {
-        emptyBitcodeMarkerFound = true;
-        return;
-      }
-    }
-  });
-  return !emptyBitcodeMarkerFound;
 }

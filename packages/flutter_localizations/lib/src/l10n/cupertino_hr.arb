@@ -27,5 +27,14 @@
   "tabSemanticsLabel": "Kartica $tabIndex od $tabCount",
   "modalBarrierDismissLabel": "Odbaci",
   "searchTextFieldPlaceholderLabel": "Pretraživanje",
+<<<<<<< HEAD
   "noSpellCheckReplacementsLabel": "No Replacements Found"
+=======
+  "noSpellCheckReplacementsLabel": "Nema pronađenih zamjena",
+  "menuDismissLabel": "Odbacivanje izbornika",
+  "lookUpButtonLabel": "Pogled prema gore",
+  "searchWebButtonLabel": "Pretraži web",
+  "shareButtonLabel": "Dijeli...",
+  "clearButtonLabel": "Clear"
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 }

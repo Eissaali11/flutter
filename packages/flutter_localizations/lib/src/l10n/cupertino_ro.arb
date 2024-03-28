@@ -23,9 +23,18 @@
   "cutButtonLabel": "Decupați",
   "copyButtonLabel": "Copiați",
   "pasteButtonLabel": "Inserați",
-  "selectAllButtonLabel": "Selectați-le pe toate",
+  "selectAllButtonLabel": "Selectează tot",
   "tabSemanticsLabel": "Fila $tabIndex din $tabCount",
   "modalBarrierDismissLabel": "Închideți",
   "searchTextFieldPlaceholderLabel": "Căutați",
+<<<<<<< HEAD
   "noSpellCheckReplacementsLabel": "No Replacements Found"
+=======
+  "noSpellCheckReplacementsLabel": "Nu s-au găsit înlocuiri",
+  "menuDismissLabel": "Respingeți meniul",
+  "lookUpButtonLabel": "Privire în sus",
+  "searchWebButtonLabel": "Căutați pe web",
+  "shareButtonLabel": "Trimiteți…",
+  "clearButtonLabel": "Clear"
+>>>>>>> 300451adae589accbece3490f4396f10bdf15e6e
 }
